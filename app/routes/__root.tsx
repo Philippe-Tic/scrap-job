@@ -27,20 +27,20 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="bg-gray-50 text-gray-900">
-        <header className="border-b border-gray-200 bg-white">
+      <body className="bg-background text-foreground">
+        <header className="border-b bg-card">
           <nav className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
             <Link
               to="/"
-              className="text-lg font-bold text-blue-600"
+              className="text-lg font-bold text-primary"
               activeOptions={{ exact: true }}
             >
               Scrap Job
             </Link>
             <Link
               to="/"
-              className="text-sm text-gray-600 hover:text-gray-900"
-              activeProps={{ className: 'text-sm font-semibold text-gray-900' }}
+              className="text-sm text-muted-foreground hover:text-foreground"
+              activeProps={{ className: 'text-sm font-semibold text-foreground' }}
               activeOptions={{ exact: true }}
             >
               Offres

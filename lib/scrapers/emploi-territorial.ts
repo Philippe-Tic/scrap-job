@@ -45,6 +45,13 @@ function snapRadius(km: number): number {
   return closest
 }
 
+function filterOffersByTitle(offers: JobOffer[], keyword: string): JobOffer[] {
+  const norm = (s: string) =>
+    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const target = norm(keyword)
+  return offers.filter((offer) => norm(offer.title).includes(target))
+}
+
 function randomUserAgent(): string {
   return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)]
 }
@@ -258,6 +265,18 @@ async function scrapeKeywordPass(
     if (page < maxPages) {
       await randomDelay(DELAY_MIN_MS, DELAY_MAX_MS)
     }
+  }
+
+  if (keyword) {
+    const beforeCount = offers.length
+    const filtered = filterOffersByTitle(offers, keyword)
+    const dropped = beforeCount - filtered.length
+    if (dropped > 0) {
+      console.log(
+        `[emploi-territorial] Title filter "${keyword}": kept ${filtered.length}/${beforeCount} (${dropped} dropped)`,
+      )
+    }
+    return filtered
   }
 
   return offers
