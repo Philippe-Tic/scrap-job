@@ -16,12 +16,54 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
 ]
 
+const CITY_CODES: Record<string, string> = {
+  rouen: '76540',
+  paris: '75056',
+  lyon: '69123',
+  marseille: '13055',
+  toulouse: '31555',
+  bordeaux: '33063',
+  lille: '59350',
+  nantes: '44109',
+  strasbourg: '67482',
+  montpellier: '34172',
+  rennes: '35238',
+}
+
+const ALLOWED_DISTANCES = [5, 10, 15, 20, 25, 30, 40, 50, 100]
+
+function snapRadius(km: number): number {
+  let closest = ALLOWED_DISTANCES[0]
+  let minDiff = Math.abs(km - closest)
+  for (const d of ALLOWED_DISTANCES) {
+    const diff = Math.abs(km - d)
+    if (diff < minDiff) {
+      closest = d
+      minDiff = diff
+    }
+  }
+  return closest
+}
+
 function randomUserAgent(): string {
   return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)]
 }
 
-function buildSearchUrl(page: number): string {
-  return `${BASE_URL}/rechercher?page=${page}&parmalink=1`
+function buildSearchUrl(
+  page: number,
+  keyword?: string,
+  location?: { villeCode: string; distance: number },
+): string {
+  const params = new URLSearchParams()
+  params.set('page', String(page))
+  if (keyword) {
+    params.set('search_offre_form[advsearch]', keyword)
+  }
+  if (location) {
+    params.set('search_offre_form[ville]', location.villeCode)
+    params.set('search_offre_form[distance]', String(location.distance))
+  }
+  return `${BASE_URL}/rechercher?${params.toString()}`
 }
 
 async function fetchPage(url: string, attempt = 0): Promise<string> {
@@ -163,73 +205,102 @@ function parseResultsPage(
   return { offers, totalResults }
 }
 
-function filterByKeywords(offers: JobOffer[], keywords: string[]): JobOffer[] {
-  if (keywords.length === 0) return offers
+function resolveLocationConfig(
+  params: SearchParams,
+): { villeCode: string; distance: number } | undefined {
+  if (!params.location) return undefined
+  const code = CITY_CODES[params.location.toLowerCase()]
+  if (!code) {
+    console.warn(
+      `[emploi-territorial] Unknown city "${params.location}", skipping location filter`,
+    )
+    return undefined
+  }
+  return { villeCode: code, distance: snapRadius(params.radius ?? 50) }
+}
 
-  const lowerKeywords = keywords.map((k) => k.toLowerCase())
-  return offers.filter((offer) => {
-    const searchText =
-      `${offer.title} ${offer.company} ${offer.location}`.toLowerCase()
-    return lowerKeywords.some((kw) => searchText.includes(kw))
-  })
+async function scrapeKeywordPass(
+  keyword: string | undefined,
+  locationConfig: { villeCode: string; distance: number } | undefined,
+  maxResults: number,
+  seenIds: Set<string>,
+): Promise<JobOffer[]> {
+  const maxPages = Math.ceil(maxResults / RESULTS_PER_PAGE)
+  const offers: JobOffer[] = []
+
+  for (let page = 1; page <= maxPages; page++) {
+    const url = buildSearchUrl(page, keyword, locationConfig)
+    console.log(`[emploi-territorial] Fetching page ${page}: ${url}`)
+
+    const html = await fetchPage(url)
+    const { offers: pageOffers, totalResults } = parseResultsPage(
+      html,
+      seenIds,
+    )
+
+    if (pageOffers.length === 0) {
+      console.log(
+        `[emploi-territorial] No new results on page ${page}, stopping`,
+      )
+      break
+    }
+
+    offers.push(...pageOffers)
+    console.log(
+      `[emploi-territorial] Page ${page}: ${pageOffers.length} new offers (pass total: ${offers.length}, site total: ${totalResults})`,
+    )
+
+    if (seenIds.size >= totalResults || offers.length >= maxResults) {
+      break
+    }
+
+    // Polite delay between pages
+    if (page < maxPages) {
+      await randomDelay(DELAY_MIN_MS, DELAY_MAX_MS)
+    }
+  }
+
+  return offers
 }
 
 async function scrape(params: SearchParams): Promise<JobOffer[]> {
   const maxResults = params.maxResults ?? 100
-  const maxPages = Math.ceil(maxResults / RESULTS_PER_PAGE)
-  const allOffers: JobOffer[] = []
   const seenIds = new Set<string>()
-  const errors: string[] = []
+  const allOffers: JobOffer[] = []
+
+  const locationConfig = resolveLocationConfig(params)
+
+  const keywords =
+    params.keywords.length > 0 ? params.keywords : [undefined as string | undefined]
 
   console.log(
-    `[emploi-territorial] Starting scrape (maxResults: ${maxResults}, keywords: ${params.keywords.join(', ')})`,
+    `[emploi-territorial] Starting scrape (maxResults: ${maxResults}, keywords: [${params.keywords.join(', ')}], location: ${params.location || 'none'}, radius: ${params.radius ?? 'default'})`,
   )
 
-  for (let page = 1; page <= maxPages; page++) {
-    try {
-      const url = buildSearchUrl(page)
-      console.log(`[emploi-territorial] Fetching page ${page}: ${url}`)
+  for (const keyword of keywords) {
+    if (keyword) {
+      console.log(`[emploi-territorial] --- Keyword pass: "${keyword}" ---`)
+    }
 
-      const html = await fetchPage(url)
-      const { offers, totalResults } = parseResultsPage(html, seenIds)
+    const offers = await scrapeKeywordPass(
+      keyword,
+      locationConfig,
+      maxResults,
+      seenIds,
+    )
+    allOffers.push(...offers)
 
-      if (offers.length === 0) {
-        console.log(`[emploi-territorial] No new results on page ${page}, stopping`)
-        break
-      }
-
-      allOffers.push(...offers)
-      console.log(
-        `[emploi-territorial] Page ${page}: ${offers.length} new offers (total: ${allOffers.length}, site total: ${totalResults})`,
-      )
-
-      // Check if we've reached the end
-      if (seenIds.size >= totalResults || allOffers.length >= maxResults) {
-        break
-      }
-
-      // Polite delay between pages
-      if (page < maxPages) {
-        await randomDelay(DELAY_MIN_MS, DELAY_MAX_MS)
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown error'
-      console.error(
-        `[emploi-territorial] Error on page ${page}: ${message}`,
-      )
-      errors.push(`Page ${page}: ${message}`)
-      // Continue to next page on error
+    // Polite delay between keyword passes
+    if (keywords.length > 1 && keyword !== keywords[keywords.length - 1]) {
+      await randomDelay(DELAY_MIN_MS, DELAY_MAX_MS)
     }
   }
 
-  // Filter by keywords locally
-  const filtered = filterByKeywords(allOffers, params.keywords)
   console.log(
-    `[emploi-territorial] Done: ${allOffers.length} total, ${filtered.length} after keyword filter`,
+    `[emploi-territorial] Done: ${allOffers.length} offers collected (${seenIds.size} unique IDs seen)`,
   )
 
-  return filtered
+  return allOffers
 }
 
 export const emploiTerritorial: JobSource = {

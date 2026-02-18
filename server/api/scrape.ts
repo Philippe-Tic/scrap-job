@@ -1,13 +1,8 @@
 import { getSources, getSourceById } from '../../lib/scrapers/index'
 import { validateJobOffers } from '../../lib/scrapers/validation'
 import { insertJobs, insertScrapeRun, updateScrapeRun } from './jobs'
+import { getSearchDefaults } from '../../lib/config'
 import type { ScrapeResult, SearchParams } from '../../lib/scrapers/types'
-
-const DEFAULT_PARAMS: SearchParams = {
-  keywords: [],
-  location: '',
-  maxResults: 100,
-}
 
 async function scrapeSource(
   sourceId: string,
@@ -94,7 +89,7 @@ export async function triggerScrape(options?: {
       if (value !== undefined) overrides[key] = value
     }
   }
-  const params: SearchParams = { ...DEFAULT_PARAMS, ...overrides } as SearchParams
+  const params: SearchParams = { ...getSearchDefaults(), ...overrides } as SearchParams
 
   // Determine which sources to run
   const allSources = getSources()
