@@ -1,6 +1,7 @@
 import type { JobSource } from './types'
+import { emploiTerritorial } from './emploi-territorial'
 
-const sources: JobSource[] = []
+const sources: JobSource[] = [emploiTerritorial]
 
 export function getSources(): JobSource[] {
   return sources
