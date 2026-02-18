@@ -1,0 +1,8 @@
+node_modules
+.output
+dist
+*.db
+data/
+.env.local
+app/routeTree.gen.ts
+.vite
