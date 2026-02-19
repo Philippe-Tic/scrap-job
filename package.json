@@ -13,7 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "docker:build": "docker build -t scrap-job .",
-    "docker:run": "docker run -p 3000:3000 -v scrap-job-data:/app/data --env-file .env.local scrap-job"
+    "docker:run": "docker run -p 3000:3000 -v scrap-job-data:/app/data --env-file .env.local scrap-job",
+    "scrape": "bash scripts/scrape.sh"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.161.1",
