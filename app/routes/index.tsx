@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { SearchBar } from '~/components/search-bar'
 import { JobList } from '~/components/job-list'
 import { JobListSkeleton } from '~/components/job-list-skeleton'
 import { Pagination } from '~/components/pagination'
 import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
 import type { Job } from '~/lib/types'
 import { createServerFn } from '@tanstack/react-start'
 
@@ -57,11 +56,8 @@ export const Route = createFileRoute('/')({
 
 function Home() {
   const navigate = useNavigate()
-  const router = useRouter()
   const { q, source, page, excludeInternships } = Route.useSearch()
   const data = Route.useLoaderData()
-  const [clearing, setClearing] = useState(false)
-
   // Optimistic overlay: Map<jobId, partial overrides>
   const [optimistic, setOptimistic] = useState<Map<number, Partial<Job>>>(
     () => new Map(),
@@ -143,21 +139,6 @@ function Home() {
     })
   }
 
-  async function handleClear() {
-    if (!window.confirm('Vider toute la base de données ?')) return
-    setClearing(true)
-    try {
-      const res = await fetch('/api/jobs', { method: 'DELETE' })
-      const json = await res.json()
-      console.log('[clear] result:', json)
-      router.invalidate()
-    } catch (err) {
-      console.error('[clear] failed:', err)
-    } finally {
-      setClearing(false)
-    }
-  }
-
   function handleSearch(query: string) {
     navigate({
       to: '/',
@@ -190,14 +171,7 @@ function Home() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Offres d'emploi</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="destructive" size="sm" disabled={clearing} onClick={handleClear}>
-            {clearing ? 'Suppression...' : 'Vider la base'}
-          </Button>
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold">Offres d'emploi</h1>
 
       {/* Toolbar: search + filters */}
       <div className="space-y-3">

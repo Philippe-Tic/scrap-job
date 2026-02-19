@@ -1,10 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { triggerScrape } from '../../../server/api/scrape'
 
+function isAuthorized(request: Request): boolean {
+  const secret = process.env.SCRAPE_SECRET
+  if (!secret) return true // no secret configured = no protection (dev)
+  const auth = request.headers.get('authorization')
+  return auth === `Bearer ${secret}`
+}
+
 export const Route = createFileRoute('/api/scrape')({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!isAuthorized(request)) {
+          return new Response('Unauthorized', { status: 401 })
+        }
+
         let options: {
           sourceIds?: string[]
           params?: { keywords?: string[]; location?: string; maxResults?: number }

@@ -2,7 +2,6 @@ app = "scrap-job"
 primary_region = "cdg"
 
 [env]
-  SCRAPE_INTERVAL_MINUTES = "60"
   SCRAPE_DELAY_MS_MIN = "2000"
   SCRAPE_DELAY_MS_MAX = "5000"
   DEFAULT_SEARCH_KEYWORDS = "communication,graphiste"

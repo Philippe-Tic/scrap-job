@@ -25,11 +25,6 @@ export const Route = createFileRoute('/api/jobs')({
         })
         return Response.json(result)
       },
-      DELETE: async () => {
-        const { clearAllJobs } = await import('../../../server/api/jobs')
-        const result = await clearAllJobs()
-        return Response.json(result)
-      },
     },
   },
 })

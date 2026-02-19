@@ -203,12 +203,6 @@ export async function updateScrapeRun(
     .run()
 }
 
-export async function clearAllJobs() {
-  const deletedJobs = db.delete(jobs).run()
-  const deletedRuns = db.delete(scrapeRuns).run()
-  return { deletedJobs: deletedJobs.changes, deletedRuns: deletedRuns.changes }
-}
-
 export async function getLatestScrapeRuns() {
   return db
     .select()
