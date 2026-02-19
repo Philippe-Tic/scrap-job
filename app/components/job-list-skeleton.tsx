@@ -35,7 +35,7 @@ export function JobListSkeleton() {
       {/* Search bar skeleton */}
       <Skeleton className="h-9 w-full rounded-md" />
       {/* Cards */}
-      <div className="grid gap-3">
+      <div className="grid gap-4">
         {Array.from({ length: 5 }, (_, i) => (
           <JobCardSkeleton key={i} />
         ))}

@@ -4,7 +4,6 @@ import {
   Calendar,
   Star,
   EyeOff,
-  ExternalLink,
 } from 'lucide-react'
 import { Card, CardContent } from '~/components/ui/card'
 import { Badge } from '~/components/ui/badge'
@@ -17,11 +16,13 @@ interface JobCardProps {
   onToggleHidden: (id: number) => void
 }
 
-const SOURCE_BADGE_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-  'emploi-territorial': { label: 'Emploi Territ.', variant: 'default' },
-  'indeed': { label: 'Indeed', variant: 'secondary' },
-  'isarta': { label: 'Isarta', variant: 'secondary' },
-  'linkedin': { label: 'LinkedIn', variant: 'outline' },
+const SOURCE_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
+  'emploi-territorial': { label: 'Emploi Territ.', className: 'border-blue-500/30 bg-blue-500/10 text-blue-400' },
+  'hellowork':          { label: 'HelloWork',      className: 'border-orange-500/30 bg-orange-500/10 text-orange-400' },
+  'indeed':             { label: 'Indeed',          className: 'border-purple-500/30 bg-purple-500/10 text-purple-400' },
+  'isarta':             { label: 'Isarta',          className: 'border-teal-500/30 bg-teal-500/10 text-teal-400' },
+  'linkedin':           { label: 'LinkedIn',        className: 'border-sky-500/30 bg-sky-500/10 text-sky-400' },
+  'welcometothejungle': { label: 'WTTJ',            className: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400' },
 }
 
 function parseTags(tags: string | null): string[] {
@@ -53,28 +54,15 @@ export function JobCard({ job, onToggleFavorite, onToggleHidden }: JobCardProps)
   const isFavorite = job.isFavorite ?? false
 
   return (
-    <Card className="group relative gap-0 py-4 transition-colors hover:border-foreground/20">
-      {/* External link icon on hover */}
-      <a
-        href={job.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100"
-        aria-label="Ouvrir l'offre originale"
-      >
-        <ExternalLink className="size-4 text-muted-foreground hover:text-foreground" />
-      </a>
+    <Card className="group relative cursor-pointer gap-0 py-4 transition-all duration-200 hover:border-primary/30 hover:shadow-[0_0_15px_oklch(0.55_0.25_290/0.1)]">
+      {/* Overlay link — couvre toute la card */}
+      <a href={job.url} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-0" aria-label={job.title} />
 
       <CardContent className="space-y-3">
         {/* Title */}
-        <a
-          href={job.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="line-clamp-2 font-semibold leading-tight text-foreground hover:underline"
-        >
+        <span className="line-clamp-2 font-semibold leading-tight text-foreground">
           {job.title}
-        </a>
+        </span>
 
         {/* Meta info */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -99,7 +87,7 @@ export function JobCard({ job, onToggleFavorite, onToggleHidden }: JobCardProps)
           {(() => {
             const cfg = SOURCE_BADGE_CONFIG[job.sourceId]
             return cfg ? (
-              <Badge variant={cfg.variant}>{cfg.label}</Badge>
+              <Badge variant="outline" className={cfg.className}>{cfg.label}</Badge>
             ) : (
               <Badge variant="outline">{job.sourceId}</Badge>
             )
@@ -123,7 +111,7 @@ export function JobCard({ job, onToggleFavorite, onToggleHidden }: JobCardProps)
         </div>
 
         {/* Actions */}
-        <div className="flex gap-1 pt-1">
+        <div className="relative z-10 flex justify-end gap-1 pt-1">
           <Button
             variant="ghost"
             size="icon-sm"

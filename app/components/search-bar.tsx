@@ -33,7 +33,7 @@ export function SearchBar({ value, onSearch }: SearchBarProps) {
         placeholder="Rechercher une offre..."
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
-        className="pl-9 pr-9"
+        className="h-11 pl-9 pr-9"
       />
       {localValue && (
         <Button

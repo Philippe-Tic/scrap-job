@@ -19,7 +19,7 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
 
       <div className="flex items-center gap-2">
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
@@ -28,12 +28,12 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
           Précédent
         </Button>
 
-        <span className="min-w-[5rem] text-center text-sm text-muted-foreground">
+        <span className="min-w-[5rem] text-center text-sm text-foreground">
           {page} / {totalPages}
         </span>
 
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}

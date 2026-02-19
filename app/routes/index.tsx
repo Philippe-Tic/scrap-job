@@ -222,67 +222,75 @@ function Home() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Offres d'emploi</h1>
+        <h1 className="text-3xl font-bold">Offres d'emploi</h1>
         <div className="flex items-center gap-2">
           <Button variant="destructive" size="sm" disabled={clearing || scraping} onClick={handleClear}>
             {clearing ? 'Suppression...' : 'Vider la base'}
           </Button>
-          <div className="flex items-center gap-1.5">
-            {SOURCES.map((s) => (
-              <label key={s.id} className="flex cursor-pointer items-center gap-1 text-sm">
-                <input
-                  type="checkbox"
-                  checked={selectedSources.has(s.id)}
-                  onChange={() => toggleScrapingSource(s.id)}
-                  disabled={scraping || clearing}
-                  className="accent-primary"
-                />
-                {s.label}
-              </label>
-            ))}
-          </div>
-          <Button variant="outline" size="sm" disabled={scraping || clearing || selectedSources.size === 0} onClick={handleScrape}>
+          <Button variant="default" size="sm" disabled={scraping || clearing || selectedSources.size === 0} onClick={handleScrape}>
             {scraping ? 'Scraping...' : 'Lancer le scraping'}
           </Button>
         </div>
       </div>
 
-      <SearchBar value={q ?? ''} onSearch={handleSearch} />
+      {/* Scrape config panel */}
+      <div className="rounded-xl border border-border/50 bg-secondary/50 p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {SOURCES.map((s) => (
+            <label key={s.id} className="flex cursor-pointer items-center gap-1.5 text-sm text-secondary-foreground">
+              <input
+                type="checkbox"
+                checked={selectedSources.has(s.id)}
+                onChange={() => toggleScrapingSource(s.id)}
+                disabled={scraping || clearing}
+                className="accent-primary"
+              />
+              {s.label}
+            </label>
+          ))}
+        </div>
+      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge
-          className="cursor-pointer"
-          variant={!source ? 'default' : 'outline'}
-          onClick={() => handleSourceFilter(undefined)}
-        >
-          Toutes
-        </Badge>
-        {SOURCES.map((s) => (
+      {/* Toolbar: search + filters */}
+      <div className="space-y-3">
+        <SearchBar value={q ?? ''} onSearch={handleSearch} />
+
+        <div className="flex flex-wrap items-center gap-2">
           <Badge
-            key={s.id}
             className="cursor-pointer"
-            variant={source === s.id ? 'default' : 'outline'}
-            onClick={() => handleSourceFilter(s.id)}
+            variant={!source ? 'default' : 'outline'}
+            onClick={() => handleSourceFilter(undefined)}
           >
-            {s.label}
+            Toutes
           </Badge>
-        ))}
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={excludeInternships !== false}
-            onChange={(e) =>
-              navigate({
-                to: '/',
-                search: (prev) => ({ ...prev, excludeInternships: e.target.checked ? undefined : false, page: undefined }),
-              })
-            }
-            className="accent-primary"
-          />
-          Exclure stages / alternances
-        </label>
+          {SOURCES.map((s) => (
+            <Badge
+              key={s.id}
+              className="cursor-pointer"
+              variant={source === s.id ? 'default' : 'outline'}
+              onClick={() => handleSourceFilter(s.id)}
+            >
+              {s.label}
+            </Badge>
+          ))}
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={excludeInternships !== false}
+              onChange={(e) =>
+                navigate({
+                  to: '/',
+                  search: (prev) => ({ ...prev, excludeInternships: e.target.checked ? undefined : false, page: undefined }),
+                })
+              }
+              className="accent-primary"
+            />
+            Exclure stages / alternances
+          </label>
+        </div>
       </div>
 
       <JobList

@@ -11,10 +11,10 @@ interface JobListProps {
 export function JobList({ jobs, onToggleFavorite, onToggleHidden }: JobListProps) {
   if (jobs.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed p-10 text-center text-muted-foreground">
-        <SearchX className="size-10 opacity-40" />
-        <p className="text-lg font-medium">Aucune offre trouvée</p>
-        <p className="text-sm">
+      <div className="flex flex-col items-center gap-3 rounded-xl bg-secondary/30 p-12 text-center">
+        <SearchX className="size-12 text-muted-foreground" />
+        <p className="text-lg font-medium text-foreground">Aucune offre trouvée</p>
+        <p className="text-sm text-muted-foreground">
           Essayez de modifier votre recherche ou lancez un scrape pour collecter de nouvelles offres.
         </p>
       </div>
@@ -22,7 +22,7 @@ export function JobList({ jobs, onToggleFavorite, onToggleHidden }: JobListProps
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-4">
       {jobs.map((job) => (
         <JobCard
           key={job.id}

@@ -28,26 +28,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="bg-background text-foreground">
-        <header className="border-b bg-card">
-          <nav className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
-            <Link
-              to="/"
-              className="text-lg font-bold text-primary"
-              activeOptions={{ exact: true }}
-            >
+        {/* Purple accent line */}
+        <div className="h-0.5 bg-gradient-to-r from-purple-600 via-violet-500 to-purple-600" />
+        <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+          <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+            <Link to="/" className="text-lg font-bold text-primary">
               Scrap Job
-            </Link>
-            <Link
-              to="/"
-              className="text-sm text-muted-foreground hover:text-foreground"
-              activeProps={{ className: 'text-sm font-semibold text-foreground' }}
-              activeOptions={{ exact: true }}
-            >
-              Offres
             </Link>
           </nav>
         </header>
-        <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
         <TanStackRouterDevtools position="bottom-right" />
         <Scripts />
       </body>
