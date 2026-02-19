@@ -5,35 +5,50 @@ import { SearchBar } from '~/components/search-bar'
 import { JobList } from '~/components/job-list'
 import { JobListSkeleton } from '~/components/job-list-skeleton'
 import { Pagination } from '~/components/pagination'
+import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import type { Job } from '~/lib/types'
 import { createServerFn } from '@tanstack/react-start'
 
+const SOURCES = [
+  { id: 'emploi-territorial', label: 'Emploi Territ.' },
+  { id: 'hellowork', label: 'HelloWork' },
+  { id: 'indeed', label: 'Indeed' },
+  { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'welcometothejungle', label: 'WTTJ' },
+] as const
+
 const fetchJobs = createServerFn({ method: 'GET' })
   .inputValidator(
-    (input: unknown) => input as { query?: string; page?: number },
+    (input: unknown) => input as { query?: string; source?: string; page?: number; excludeInternships?: boolean },
   )
   .handler(async ({ data }) => {
     const { getJobs } = await import('../../server/api/jobs')
     return getJobs({
       query: data.query,
+      source: data.source,
       page: data.page || 1,
+      excludeInternships: data.excludeInternships,
     })
   })
 
 const searchSchema = z.object({
   q: z.string().optional().catch(undefined),
+  source: z.string().optional().catch(undefined),
   page: z.number().int().positive().optional().catch(1),
+  excludeInternships: z.boolean().optional().catch(true),
 })
 
 export const Route = createFileRoute('/')({
   validateSearch: searchSchema,
   loaderDeps: ({ search }) => ({
     q: search.q,
+    source: search.source,
     page: search.page,
+    excludeInternships: search.excludeInternships,
   }),
   loader: async ({ deps }) => {
-    return fetchJobs({ data: { query: deps.q, page: deps.page } })
+    return fetchJobs({ data: { query: deps.q, source: deps.source, page: deps.page, excludeInternships: deps.excludeInternships } })
   },
   pendingComponent: JobListSkeleton,
   component: Home,
@@ -42,10 +57,13 @@ export const Route = createFileRoute('/')({
 function Home() {
   const navigate = useNavigate()
   const router = useRouter()
-  const { q, page } = Route.useSearch()
+  const { q, source, page, excludeInternships } = Route.useSearch()
   const data = Route.useLoaderData()
   const [scraping, setScraping] = useState(false)
   const [clearing, setClearing] = useState(false)
+  const [selectedSources, setSelectedSources] = useState<Set<string>>(
+    () => new Set(SOURCES.map((s) => s.id)),
+  )
 
   // Optimistic overlay: Map<jobId, partial overrides>
   const [optimistic, setOptimistic] = useState<Map<number, Partial<Job>>>(
@@ -146,7 +164,11 @@ function Home() {
   async function handleScrape() {
     setScraping(true)
     try {
-      const res = await fetch('/api/scrape', { method: 'POST' })
+      const res = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceIds: [...selectedSources] }),
+      })
       const json = await res.json()
       console.log('[scrape] result:', json)
       router.invalidate()
@@ -160,8 +182,31 @@ function Home() {
   function handleSearch(query: string) {
     navigate({
       to: '/',
-      search: { q: query || undefined, page: undefined },
+      search: { q: query || undefined, source, page: undefined },
       replace: true,
+    })
+  }
+
+  function handleSourceFilter(sourceId: string | undefined) {
+    navigate({
+      to: '/',
+      search: (prev) => ({
+        ...prev,
+        source: sourceId,
+        page: undefined,
+      }),
+    })
+  }
+
+  function toggleScrapingSource(sourceId: string) {
+    setSelectedSources((prev) => {
+      const next = new Set(prev)
+      if (next.has(sourceId)) {
+        next.delete(sourceId)
+      } else {
+        next.add(sourceId)
+      }
+      return next
     })
   }
 
@@ -183,13 +228,61 @@ function Home() {
           <Button variant="destructive" size="sm" disabled={clearing || scraping} onClick={handleClear}>
             {clearing ? 'Suppression...' : 'Vider la base'}
           </Button>
-          <Button variant="outline" size="sm" disabled={scraping || clearing} onClick={handleScrape}>
+          <div className="flex items-center gap-1.5">
+            {SOURCES.map((s) => (
+              <label key={s.id} className="flex cursor-pointer items-center gap-1 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedSources.has(s.id)}
+                  onChange={() => toggleScrapingSource(s.id)}
+                  disabled={scraping || clearing}
+                  className="accent-primary"
+                />
+                {s.label}
+              </label>
+            ))}
+          </div>
+          <Button variant="outline" size="sm" disabled={scraping || clearing || selectedSources.size === 0} onClick={handleScrape}>
             {scraping ? 'Scraping...' : 'Lancer le scraping'}
           </Button>
         </div>
       </div>
 
       <SearchBar value={q ?? ''} onSearch={handleSearch} />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge
+          className="cursor-pointer"
+          variant={!source ? 'default' : 'outline'}
+          onClick={() => handleSourceFilter(undefined)}
+        >
+          Toutes
+        </Badge>
+        {SOURCES.map((s) => (
+          <Badge
+            key={s.id}
+            className="cursor-pointer"
+            variant={source === s.id ? 'default' : 'outline'}
+            onClick={() => handleSourceFilter(s.id)}
+          >
+            {s.label}
+          </Badge>
+        ))}
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={excludeInternships !== false}
+            onChange={(e) =>
+              navigate({
+                to: '/',
+                search: (prev) => ({ ...prev, excludeInternships: e.target.checked ? undefined : false, page: undefined }),
+              })
+            }
+            className="accent-primary"
+          />
+          Exclure stages / alternances
+        </label>
+      </div>
 
       <JobList
         jobs={jobs}

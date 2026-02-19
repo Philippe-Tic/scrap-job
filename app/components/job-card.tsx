@@ -17,6 +17,12 @@ interface JobCardProps {
   onToggleHidden: (id: number) => void
 }
 
+const SOURCE_BADGE_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+  'emploi-territorial': { label: 'Emploi Territ.', variant: 'default' },
+  'indeed': { label: 'Indeed', variant: 'secondary' },
+  'linkedin': { label: 'LinkedIn', variant: 'outline' },
+}
+
 function parseTags(tags: string | null): string[] {
   if (!tags) return []
   try {
@@ -89,6 +95,14 @@ export function JobCard({ job, onToggleFavorite, onToggleHidden }: JobCardProps)
 
         {/* Badges row */}
         <div className="flex flex-wrap items-center gap-2">
+          {(() => {
+            const cfg = SOURCE_BADGE_CONFIG[job.sourceId]
+            return cfg ? (
+              <Badge variant={cfg.variant}>{cfg.label}</Badge>
+            ) : (
+              <Badge variant="outline">{job.sourceId}</Badge>
+            )
+          })()}
           {job.contractType && (
             <Badge variant="secondary">{job.contractType}</Badge>
           )}

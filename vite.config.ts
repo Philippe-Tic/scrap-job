@@ -14,4 +14,10 @@ export default defineConfig({
     tanstackStart({ srcDirectory: 'app' }),
     react(),
   ],
+  ssr: {
+    external: ['playwright', 'playwright-core'],
+  },
+  optimizeDeps: {
+    exclude: ['playwright', 'playwright-core'],
+  },
 })

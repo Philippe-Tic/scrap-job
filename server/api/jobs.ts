@@ -1,4 +1,4 @@
-import { eq, like, or, and, desc, sql } from 'drizzle-orm'
+import { eq, like, or, and, not, desc, sql } from 'drizzle-orm'
 import { db } from '../../lib/db'
 import { jobs, scrapeRuns } from '../../lib/db/schema'
 import type { JobOffer } from '../../lib/scrapers/types'
@@ -10,12 +10,13 @@ export interface GetJobsParams {
   location?: string
   isFavorite?: boolean
   isHidden?: boolean
+  excludeInternships?: boolean
   page?: number
   perPage?: number
 }
 
 export async function getJobs(params: GetJobsParams = {}) {
-  const { query, source, contractType, location, isFavorite, isHidden, page = 1, perPage = 20 } = params
+  const { query, source, contractType, location, isFavorite, isHidden, excludeInternships = true, page = 1, perPage = 20 } = params
 
   const conditions = []
 
@@ -51,6 +52,17 @@ export async function getJobs(params: GetJobsParams = {}) {
     conditions.push(eq(jobs.isHidden, isHidden))
   } else {
     conditions.push(eq(jobs.isHidden, false))
+  }
+
+  // Exclude internships and apprenticeships (default: on)
+  if (excludeInternships) {
+    const excludeTerms = ['stage', 'stagiaire', 'alternant', 'alternance']
+    const safeContractType = sql`COALESCE(${jobs.contractType}, '')`
+    const excludeConditions = excludeTerms.flatMap((term) => [
+      like(jobs.title, `%${term}%`),
+      like(safeContractType, `%${term}%`),
+    ])
+    conditions.push(not(or(...excludeConditions)!))
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined

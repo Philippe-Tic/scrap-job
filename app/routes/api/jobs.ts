@@ -17,6 +17,9 @@ export const Route = createFileRoute('/api/jobs')({
           isHidden: url.searchParams.has('isHidden')
             ? url.searchParams.get('isHidden') === 'true'
             : undefined,
+          excludeInternships: url.searchParams.has('excludeInternships')
+            ? url.searchParams.get('excludeInternships') === 'true'
+            : undefined,
           page: Number(url.searchParams.get('page')) || 1,
           perPage: Number(url.searchParams.get('perPage')) || 20,
         })

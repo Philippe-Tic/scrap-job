@@ -1,20 +1,12 @@
 import * as cheerio from 'cheerio'
 import { randomDelay } from '../utils'
+import { fetchWithRetry, filterByTitle } from './utils'
 import type { JobSource, JobOffer, SearchParams } from './types'
 
 const BASE_URL = 'https://www.emploi-territorial.fr'
 const RESULTS_PER_PAGE = 20
-const MAX_RETRIES = 2
 const DELAY_MIN_MS = 2000
 const DELAY_MAX_MS = 4000
-
-const USER_AGENTS = [
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
-]
 
 const CITY_CODES: Record<string, string> = {
   rouen: '76540',
@@ -45,17 +37,6 @@ function snapRadius(km: number): number {
   return closest
 }
 
-function filterOffersByTitle(offers: JobOffer[], keyword: string): JobOffer[] {
-  const norm = (s: string) =>
-    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  const target = norm(keyword)
-  return offers.filter((offer) => norm(offer.title).includes(target))
-}
-
-function randomUserAgent(): string {
-  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)]
-}
-
 function buildSearchUrl(
   page: number,
   keyword?: string,
@@ -73,33 +54,8 @@ function buildSearchUrl(
   return `${BASE_URL}/rechercher?${params.toString()}`
 }
 
-async function fetchPage(url: string, attempt = 0): Promise<string> {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': randomUserAgent(),
-        Accept:
-          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.5',
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    return await response.text()
-  } catch (error) {
-    if (attempt < MAX_RETRIES) {
-      const backoffMs = Math.pow(2, attempt + 1) * 1000
-      console.warn(
-        `[emploi-territorial] Retry ${attempt + 1}/${MAX_RETRIES} for ${url} (waiting ${backoffMs}ms)`,
-      )
-      await new Promise((r) => setTimeout(r, backoffMs))
-      return fetchPage(url, attempt + 1)
-    }
-    throw error
-  }
+async function fetchPage(url: string): Promise<{ html: string; blocked: boolean }> {
+  return fetchWithRetry(url, { tag: 'emploi-territorial' })
 }
 
 /**
@@ -239,7 +195,11 @@ async function scrapeKeywordPass(
     const url = buildSearchUrl(page, keyword, locationConfig)
     console.log(`[emploi-territorial] Fetching page ${page}: ${url}`)
 
-    const html = await fetchPage(url)
+    const { html, blocked } = await fetchPage(url)
+    if (blocked) {
+      console.warn(`[emploi-territorial] Blocked on page ${page}, stopping with partial results`)
+      break
+    }
     const { offers: pageOffers, totalResults } = parseResultsPage(
       html,
       seenIds,
@@ -269,7 +229,7 @@ async function scrapeKeywordPass(
 
   if (keyword) {
     const beforeCount = offers.length
-    const filtered = filterOffersByTitle(offers, keyword)
+    const filtered = filterByTitle(offers, [keyword])
     const dropped = beforeCount - filtered.length
     if (dropped > 0) {
       console.log(

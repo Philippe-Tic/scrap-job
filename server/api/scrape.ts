@@ -1,4 +1,5 @@
 import { getSources, getSourceById } from '../../lib/scrapers/index'
+import { closeBrowser } from '../../lib/scrapers/browser'
 import { validateJobOffers } from '../../lib/scrapers/validation'
 import { insertJobs, insertScrapeRun, updateScrapeRun } from './jobs'
 import { getSearchDefaults } from '../../lib/config'
@@ -91,6 +92,15 @@ export async function triggerScrape(options?: {
   }
   const params: SearchParams = { ...getSearchDefaults(), ...overrides } as SearchParams
 
+  if (params.keywords.length === 0) {
+    console.warn('[scrape] No keywords configured — aborting')
+    return {
+      success: false,
+      message: 'No search keywords configured. Set DEFAULT_SEARCH_KEYWORDS in environment.',
+      results: [] as ScrapeResult[],
+    }
+  }
+
   // Determine which sources to run
   const allSources = getSources()
   const sourceIds =
@@ -116,6 +126,9 @@ export async function triggerScrape(options?: {
     const result = await scrapeSource(sourceId, params)
     results.push(result)
   }
+
+  // Close browser after all sources are done (safety net: idle timeout still applies)
+  try { await closeBrowser() } catch { /* Playwright unavailable */ }
 
   const successCount = results.filter((r) => r.success).length
   const totalJobs = results.reduce((sum, r) => sum + r.jobsFound, 0)
