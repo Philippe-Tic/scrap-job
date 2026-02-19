@@ -1,0 +1,12 @@
+node_modules
+.output
+dist
+data
+*.db
+*.db-shm
+*.db-wal
+.git
+.env.local
+.vite
+.tanstack
+app/routeTree.gen.ts

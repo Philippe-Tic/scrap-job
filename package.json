@@ -3,12 +3,17 @@
   "private": true,
   "type": "module",
   "sideEffects": false,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build && tsc --noEmit",
     "start": "node .output/server/index.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "docker:build": "docker build -t scrap-job .",
+    "docker:run": "docker run -p 3000:3000 -v scrap-job-data:/app/data --env-file .env.local scrap-job"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.161.1",

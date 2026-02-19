@@ -1,5 +1,15 @@
-import { chromium, type Browser, type BrowserContext } from 'playwright'
+import type { Browser, BrowserContext } from 'playwright'
 import type { FetchResult } from './utils'
+
+let chromiumLauncher: typeof import('playwright').chromium | null = null
+
+async function getChromium() {
+  if (!chromiumLauncher) {
+    const pw = await import('playwright')
+    chromiumLauncher = pw.chromium
+  }
+  return chromiumLauncher
+}
 
 const TAG = 'browser'
 const IS_PROD = process.env.NODE_ENV === 'production'
@@ -26,9 +36,14 @@ async function getBrowser(): Promise<Browser> {
 
   const headless = IS_PROD || process.env.BROWSER_HEADLESS !== 'false'
   console.log(`[${TAG}] Launching Chromium (headless: ${headless})...`)
+  const chromium = await getChromium()
   browser = await chromium.launch({
     headless,
-    args: ['--disable-blink-features=AutomationControlled'],
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+    ],
   })
 
   browser.on('disconnected', () => {
