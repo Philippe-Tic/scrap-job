@@ -14,6 +14,7 @@ const SOURCES = [
   { id: 'emploi-territorial', label: 'Emploi Territ.' },
   { id: 'hellowork', label: 'HelloWork' },
   { id: 'indeed', label: 'Indeed' },
+  { id: 'isarta', label: 'Isarta' },
   { id: 'linkedin', label: 'LinkedIn' },
   { id: 'welcometothejungle', label: 'WTTJ' },
 ] as const

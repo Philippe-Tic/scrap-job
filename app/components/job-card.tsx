@@ -20,6 +20,7 @@ interface JobCardProps {
 const SOURCE_BADGE_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   'emploi-territorial': { label: 'Emploi Territ.', variant: 'default' },
   'indeed': { label: 'Indeed', variant: 'secondary' },
+  'isarta': { label: 'Isarta', variant: 'secondary' },
   'linkedin': { label: 'LinkedIn', variant: 'outline' },
 }
 

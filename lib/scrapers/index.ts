@@ -2,10 +2,11 @@ import type { JobSource } from './types'
 import { emploiTerritorial } from './emploi-territorial'
 import { hellowork } from './hellowork'
 import { indeed } from './indeed'
+import { isarta } from './isarta'
 import { linkedin } from './linkedin'
 import { welcometothejungle } from './welcometothejungle'
 
-const sources: JobSource[] = [emploiTerritorial, hellowork, indeed, linkedin, welcometothejungle]
+const sources: JobSource[] = [emploiTerritorial, hellowork, indeed, isarta, linkedin, welcometothejungle]
 
 export function getSources(): JobSource[] {
   return sources
