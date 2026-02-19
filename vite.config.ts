@@ -10,7 +10,12 @@ export default defineConfig({
     port: 3000,
   },
   plugins: [
-    nitro({ preset: 'node-server' }),
+    nitro({
+      preset: 'node-server',
+      rollupConfig: {
+        external: ['playwright', 'playwright-core'],
+      },
+    }),
     tailwindcss(),
     tsConfigPaths({ projects: ['./tsconfig.json'] }),
     tanstackStart({ srcDirectory: 'app' }),
