@@ -56,7 +56,7 @@ export async function getJobs(params: GetJobsParams = {}) {
 
   // Exclude internships and apprenticeships (default: on)
   if (excludeInternships) {
-    const excludeTerms = ['stage', 'stagiaire', 'alternant', 'alternance']
+    const excludeTerms = ['stage', 'stagiaire', 'alternant', 'alternance', 'apprentissage']
     const safeContractType = sql`COALESCE(${jobs.contractType}, '')`
     const excludeConditions = excludeTerms.flatMap((term) => [
       like(jobs.title, `%${term}%`),
