@@ -4,7 +4,7 @@ primary_region = "cdg"
 [env]
   SCRAPE_DELAY_MS_MIN = "2000"
   SCRAPE_DELAY_MS_MAX = "5000"
-  DEFAULT_SEARCH_KEYWORDS = "communication,graphiste"
+  DEFAULT_SEARCH_KEYWORDS = "communication,graphiste,community manager"
   DEFAULT_SEARCH_LOCATION = "Rouen"
   DEFAULT_SEARCH_RADIUS_KM = "50"
   DATABASE_PATH = "./data/jobs.db"
